@@ -370,7 +370,7 @@ static int i2c_hid_hwreset(struct i2c_client *client)
 	return 0;
 }
 
-static void i2c_hid_get_input(struct i2c_hid *ihid)
+static int i2c_hid_get_input(struct i2c_hid *ihid)
 {
 	int ret, ret_size;
 	int size = le16_to_cpu(ihid->hdesc.wMaxInputLength);
@@ -380,12 +380,13 @@ static void i2c_hid_get_input(struct i2c_hid *ihid)
 
 	ret = i2c_master_recv(ihid->client, ihid->inbuf, size);
 	if (ret != size) {
-		if (ret < 0)
-			return;
+		if (ret < 0) {
+			return 0;
+		}
 
 		dev_err(&ihid->client->dev, "%s: got %d data instead of %d\n",
 			__func__, ret, size);
-		return;
+		return 0;
 	}
 
 	ret_size = ihid->inbuf[0] | ihid->inbuf[1] << 8;
@@ -394,22 +395,31 @@ static void i2c_hid_get_input(struct i2c_hid *ihid)
 		/* host or device initiated RESET completed */
 		if (test_and_clear_bit(I2C_HID_RESET_PENDING, &ihid->flags))
 			wake_up(&ihid->wait);
-		return;
+
+		//return 0;
+		ret_size = 0x24;
+		ihid->inbuf[0] = 0x24;
+		ihid->inbuf[2] = 0x01;
 	}
 
 	if (ret_size > size) {
 		dev_err(&ihid->client->dev, "%s: incomplete report (%d/%d)\n",
 			__func__, size, ret_size);
-		return;
+		return 0;
 	}
 
 	i2c_hid_dbg(ihid, "input: %*ph\n", ret_size, ihid->inbuf);
 
-	if (test_bit(I2C_HID_STARTED, &ihid->flags))
+	//int touch_count = ihid->inbuf[size-1];
+	int touch_count = ihid->inbuf[3];
+	//printk("touch count : %d \n", touch_count);
+
+	if (test_bit(I2C_HID_STARTED, &ihid->flags)) {
 		hid_input_report(ihid->hid, HID_INPUT_REPORT, ihid->inbuf + 2,
 				ret_size - 2, 1);
+	}
 
-	return;
+	return touch_count;
 }
 
 static irqreturn_t i2c_hid_irq(int irq, void *dev_id)
@@ -419,7 +429,18 @@ static irqreturn_t i2c_hid_irq(int irq, void *dev_id)
 	if (test_bit(I2C_HID_READ_PENDING, &ihid->flags))
 		return IRQ_HANDLED;
 
-	i2c_hid_get_input(ihid);
+	int touch_count = 0;
+	do {
+		touch_count = i2c_hid_get_input(ihid);
+		if (!touch_count) {
+			break;
+		}
+		else {
+			//10ms
+			msleep(10);
+		}
+
+	} while (touch_count > 0);
 
 	return IRQ_HANDLED;
 }
