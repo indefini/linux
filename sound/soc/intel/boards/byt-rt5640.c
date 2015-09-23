@@ -119,6 +119,14 @@ static const struct dmi_system_id byt_rt5640_quirk_table[] = {
 	{
 		.callback = byt_rt5640_quirk_cb,
 		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "ASUSTeK COMPUTER INC."),
+			DMI_MATCH(DMI_PRODUCT_NAME, "T90CHI"),
+		},
+		.driver_data = (unsigned long *)BYT_RT5640_IN1_MAP,
+	},
+	{
+		.callback = byt_rt5640_quirk_cb,
+		.matches = {
 			DMI_MATCH(DMI_SYS_VENDOR, "DellInc."),
 			DMI_MATCH(DMI_PRODUCT_NAME, "Venue 8 Pro 5830"),
 		},
@@ -186,7 +194,7 @@ static struct snd_soc_dai_link byt_rt5640_dais[] = {
 		.stream_name = "Audio",
 		.cpu_dai_name = "baytrail-pcm-audio",
 		.codec_dai_name = "rt5640-aif1",
-		.codec_name = "i2c-10EC5640:00",
+		.codec_name = "i2c-10EC5642:00",
 		.platform_name = "baytrail-pcm-audio",
 		.dai_fmt = SND_SOC_DAIFMT_I2S | SND_SOC_DAIFMT_NB_NF |
 			   SND_SOC_DAIFMT_CBS_CFS,
