@@ -44,6 +44,15 @@ static const struct dmi_system_id inv_mpu_dev_list[] = {
 			DMI_MATCH(DMI_PRODUCT_VERSION, "1.0"),
 		},
 	},
+	{
+	.callback = asus_t100_matched,
+	.ident = "Asus TransBook T90Chi",
+		.matches = {
+			DMI_MATCH(DMI_SYS_VENDOR, "ASUSTeK COMPUTER INC"),
+			DMI_MATCH(DMI_PRODUCT_NAME, "T90CHI"),
+			DMI_MATCH(DMI_PRODUCT_VERSION, "1.0"),
+		},
+	},
 	/* Add more matching tables here..*/
 	{}
 };
